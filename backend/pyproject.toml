@@ -1,0 +1,22 @@
+[project]
+name = "comp3011-cw1-backend"
+version = "0.1.0"
+description = "COMP3011 CW1 Backend (FastAPI + SQLModel) with DDD structure."
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "N"]
+ignore = ["E203"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+disallow_any_generics = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

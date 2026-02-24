@@ -137,25 +137,12 @@ celerybeat.pid
 # Environments
 .env
 .envrc
-.venv/
+.venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
-.env.*
-!.env.example
-
-# Node / Next.js
-node_modules/
-.next/
-out/
-
-# OS / IDE
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
 
 # Spyder project settings
 .spyderproject
@@ -218,5 +205,3 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-
-
