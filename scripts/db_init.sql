@@ -1,0 +1,2 @@
+-- Optional: create database in psql
+-- CREATE DATABASE comp3011_cw1;
