@@ -224,3 +224,8 @@ __marimo__/
 *-bak
 *.bak
 *.tmp
+
+
+# Azurite
+__azurite*
+AzuriteConfig.json
