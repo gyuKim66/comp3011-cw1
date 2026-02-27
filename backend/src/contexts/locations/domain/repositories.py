@@ -6,7 +6,7 @@ Domain-level repository interfaces.
 """
 
 from abc import ABC, abstractmethod
-from src.contexts.cities.domain.entities import City
+from src.contexts.locations.domain.entities import City
 
 
 class CityRepository(ABC):

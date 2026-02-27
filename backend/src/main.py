@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.router import api_router
-from src.shared.database import init_db
+from src.shared.db.session import init_db
 
 
 @asynccontextmanager
@@ -20,7 +20,6 @@ async def lifespan(app: FastAPI):
     if os.getenv("DATABASE_URL"):
         # init_db()
         pass
-
     yield
 
     # shutdown 영역 (필요하면 여기에 추가)

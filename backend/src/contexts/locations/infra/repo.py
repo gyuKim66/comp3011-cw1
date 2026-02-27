@@ -7,10 +7,10 @@ SQL-backed repository for Cities.
 
 from sqlmodel import select
 
-from src.contexts.cities.domain.entities import City
-from src.contexts.cities.domain.repositories import CityRepository
-from src.contexts.cities.infrastructure.models import CityModel
-from src.shared.database import get_session
+from src.contexts.locations.domain.entities import City
+from src.contexts.locations.domain.repositories import CityRepository
+from src.contexts.locations.infra.orm import CityModel
+from src.shared.db.session import get_session
 
 
 class SqlCityRepository(CityRepository):
