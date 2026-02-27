@@ -9,6 +9,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from src.api.router import api_router
 from src.shared.db.session import init_db
@@ -18,8 +19,8 @@ from src.shared.db.session import init_db
 async def lifespan(app: FastAPI):
     # startup 영역
     if os.getenv("DATABASE_URL"):
-        # init_db()
-        pass
+        init_db()
+
     yield
 
     # shutdown 영역 (필요하면 여기에 추가)
@@ -43,6 +44,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.get("/", tags=["root"])
+    def root() -> dict[str, str]:
+        return {"service": "COMP3011-CW1 API", "docs": "/docs", "status": "ok"}
 
     app.include_router(api_router)
     return app
