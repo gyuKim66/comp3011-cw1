@@ -9,7 +9,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 
 from src.api.router import api_router
 from src.shared.db.session import init_db
@@ -47,6 +47,13 @@ def create_app() -> FastAPI:
     @app.get("/", tags=["root"])
     def root() -> dict[str, str]:
         return {"service": "COMP3011-CW1 API", "docs": "/docs", "status": "ok"}
+
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon():
+        return Response(status_code=204)
+    
+
 
     app.include_router(api_router)
     return app
