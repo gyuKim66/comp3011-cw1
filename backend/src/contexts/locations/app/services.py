@@ -2,17 +2,42 @@
 Author: Dongwook Kim
 Created: 2026-02-24
 
-City APP Services
+Location APP Services
 """
 
-from src.contexts.locations.domain.entities import City
-from src.contexts.locations.domain.repositories import CityRepository
+from __future__ import annotations
 
-def create_city(repo: CityRepository, name: str, latitude: float, longitude: float) -> City:
-    return repo.create(City(id=None, name=name, latitude=latitude, longitude=longitude))
+from src.contexts.locations.domain.entities import LocationEntity
+from src.contexts.locations.domain.repositories import LocationRepository
 
-def list_cities(repo: CityRepository) -> list[City]:
+
+def create_location(
+    repo: LocationRepository,
+    name: str,
+    country_code: str,
+    lat: float,
+    lon: float,
+    *,
+    is_featured: bool = False,
+    display_order: int = 0,
+    is_active: bool = True,
+) -> LocationEntity:
+    loc = LocationEntity(
+        id=None,
+        name=name,
+        country_code=country_code,
+        lat=lat,
+        lon=lon,
+        is_active=is_active,
+        is_featured=is_featured,
+        display_order=display_order,
+    )
+    return repo.create(loc)
+
+
+def list_locations(repo: LocationRepository) -> list[LocationEntity]:
     return repo.list()
 
-def get_city(repo: CityRepository, city_id: int) -> City | None:
-    return repo.get(city_id)
+
+def get_location(repo: LocationRepository, location_id: int) -> LocationEntity | None:
+    return repo.get(location_id)

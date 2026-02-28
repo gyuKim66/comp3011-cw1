@@ -5,16 +5,19 @@ Created: 2026-02-24
 Domain-level repository interfaces.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from src.contexts.locations.domain.entities import City
+
+from src.contexts.locations.domain.entities import LocationEntity
 
 
-class CityRepository(ABC):
+class LocationRepository(ABC):
     @abstractmethod
-    def create(self, city: City) -> City: ...
-
-    @abstractmethod
-    def list(self) -> list[City]: ...
+    def create(self, loc: LocationEntity) -> LocationEntity: ...
 
     @abstractmethod
-    def get(self, city_id: int) -> City | None: ...
+    def list(self) -> list[LocationEntity]: ...
+
+    @abstractmethod
+    def get(self, location_id: int) -> LocationEntity | None: ...

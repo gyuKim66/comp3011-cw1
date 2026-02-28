@@ -2,15 +2,20 @@
 Author: Dongwook Kim
 Created: 2026-02-24
 
-Cities domain entities.
+Locations domain entities.
 """
 
+from __future__ import annotations
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class City:
+class LocationEntity:
     id: int | None
     name: str
-    latitude: float
-    longitude: float
+    country_code: str
+    lat: float
+    lon: float
+    is_active: bool = True
+    is_featured: bool = False
+    display_order: int = 0
