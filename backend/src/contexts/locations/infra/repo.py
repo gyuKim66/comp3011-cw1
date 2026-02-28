@@ -1,9 +1,4 @@
-"""
-Author: Dongwook Kim
-Created: 2026-02-24
-
-SQL-backed repository for Locations.
-"""
+# src/contexts/locations/infra/orm.py
 
 from __future__ import annotations
 

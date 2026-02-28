@@ -1,6 +1,7 @@
 """
-Author: Dongwook Kim
-Created: 2026-02-24
+main.py 
+ - Author: Dongwook Kim
+ - Created: 2026-02-24
 
 FastAPI application entrypoint.
 """
@@ -14,12 +15,19 @@ from fastapi.responses import RedirectResponse, Response
 from src.api.router import api_router
 from src.shared.db.session import init_db
 
+from src.contexts.locations.app.seed import seed_locations_if_missing
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup 영역
     if os.getenv("DATABASE_URL"):
         init_db()
+
+        # ✅ 추가: 자동 seed (도시별로 있으면 skip, 없으면 insert)
+        # 로컬/개발에서만 돌리고 싶으면 AUTO_SEED=true 환경변수로 제어
+        if os.getenv("AUTO_SEED", "true").lower() == "true":
+            seed_locations_if_missing()
 
     yield
 
@@ -44,10 +52,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    """
     @app.get("/", tags=["root"])
     def root() -> dict[str, str]:
         return {"service": "COMP3011-CW1 API", "docs": "/docs", "status": "ok"}
-
+    """
 
     @app.get("/favicon.ico", include_in_schema=False)
     async def favicon():
