@@ -1,9 +1,4 @@
-"""
-Author: Dongwook Kim
-Created: 2026-02-24
-
-Location APP Services
-"""
+# src/contexts/locations/app/services.py
 
 from __future__ import annotations
 
@@ -35,9 +30,31 @@ def create_location(
     return repo.create(loc)
 
 
-def list_locations(repo: LocationRepository) -> list[LocationEntity]:
-    return repo.list()
+def list_locations(repo: LocationRepository, featured: bool | None = None):
+    locations = repo.list()
+
+    if featured is True:
+        locations = [l for l in locations if l.is_featured]
+
+    return locations
 
 
 def get_location(repo: LocationRepository, location_id: int) -> LocationEntity | None:
     return repo.get(location_id)
+
+
+def get_default_location(repo: LocationRepository) -> LocationEntity | None:
+    locations = repo.list()
+
+    # active만
+    active = [l for l in locations if l.is_active]
+    if not active:
+        return None
+
+    # featured 우선
+    featured = [l for l in active if l.is_featured]
+    pool = featured if featured else active
+
+    # display_order(우선), name(동률 안정화)
+    pool.sort(key=lambda l: (l.display_order, l.name))
+    return pool[0]

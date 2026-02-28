@@ -1,57 +1,57 @@
 "use client";
 
-import { useState } from "react";
-import { getHealth } from "@/features/health/api";
+import { useEffect, useState } from "react";
+import { getLocations, Location } from "@/features/locations/api";
 
 export default function Home() {
-  const [result, setResult] = useState<string>("(아직 호출 안 함)");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const callHealth = async () => {
-    setLoading(true);
-    setResult("요청 중...");
-
-    try {
-      const data = await getHealth();
-      setResult(JSON.stringify(data, null, 2));
-    } catch (e) {
-      setResult(`에러: ${String(e)}`);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getLocations();
+        // featured 먼저 + display_order 정렬
+        data.sort((a, b) =>
+          a.is_featured === b.is_featured
+            ? a.display_order - b.display_order
+            : a.is_featured
+            ? -1
+            : 1
+        );
+        setLocations(data);
+      } catch (e) {
+        console.error("Failed to fetch locations", e);
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+
+    load();
+  }, []);
 
   return (
-    <main style={{ padding: 24, fontFamily: "sans-serif" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700 }}>
-        Frontend ↔ Backend 연결 테스트
+    <main style={{ padding: 32, fontFamily: "sans-serif" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 700 }}>
+        🌍 Weather Dashboard
       </h1>
 
-      <button
-        onClick={callHealth}
-        disabled={loading}
-        style={{
-          marginTop: 12,
-          padding: "10px 14px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          cursor: "pointer",
-        }}
-      >
-        {loading ? "Calling..." : "Call /health"}
-      </button>
-
-      <pre
-        style={{
-          marginTop: 16,
-          padding: 12,
-          background: "#f6f6f6",
-          borderRadius: 8,
-          overflowX: "auto",
-        }}
-      >
-        {result}
-      </pre>
+      {loading ? (
+        <p style={{ marginTop: 20 }}>Loading locations...</p>
+      ) : (
+        <ul style={{ marginTop: 20 }}>
+          {locations.map((loc) => (
+            <li key={loc.id} style={{ marginBottom: 12 }}>
+              <strong>{loc.name}</strong> ({loc.country_code})
+              {loc.is_featured && (
+                <span style={{ marginLeft: 10, color: "red" }}>
+                  ⭐ Featured
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

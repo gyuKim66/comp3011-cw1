@@ -11,7 +11,14 @@ from src.contexts.locations.api.schemas import CreateLocationRequest, LocationRe
 from src.contexts.locations.infra.repo import SqlLocationRepository
 from src.contexts.locations.app.services import create_location, list_locations, get_location
 
-router = APIRouter()
+
+from sqlmodel import select
+from src.shared.db.session import get_session
+from src.contexts.locations.infra.orm import Location
+
+router = APIRouter(prefix="/locations", tags=["locations"])
+
+# router = APIRouter()
 
 
 @router.post("", response_model=LocationResponse, status_code=201)
@@ -40,9 +47,10 @@ def create(dto: CreateLocationRequest) -> LocationResponse:
 
 
 @router.get("", response_model=list[LocationResponse])
-def list_all() -> list[LocationResponse]:
+def list_all(featured: bool | None = None) -> list[LocationResponse]:
     repo = SqlLocationRepository()
-    locations = list_locations(repo)
+    locations = list_locations(repo, featured=featured)  # ✅ 서비스로 위임
+
     return [
         LocationResponse(
             id=l.id or 0,
@@ -55,7 +63,8 @@ def list_all() -> list[LocationResponse]:
             is_active=l.is_active,
         )
         for l in locations
-    ]
+    ]  
+
 
 
 @router.get("/{location_id}", response_model=LocationResponse)
@@ -75,3 +84,4 @@ def get_one(location_id: int) -> LocationResponse:
         display_order=loc.display_order,
         is_active=loc.is_active,
     )
+
