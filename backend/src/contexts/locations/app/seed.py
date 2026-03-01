@@ -1,14 +1,13 @@
-"""
-Auto seed for locations
-Author: Dongwook Kim
-"""
+# backend/src/contexts/locations/app/seed.py
+# Auto seed for locations
+
 
 from __future__ import annotations
 
 from sqlmodel import Session, select
 
-from src.shared.db.session import get_session  # ✅ 이걸로 통일
-from src.contexts.locations.infra.orm import Location  # ✅ Location ORM 경로에 맞게
+from src.shared.db.session import get_session  
+from src.contexts.locations.infra.orm import Location  
 
 
 
@@ -62,7 +61,6 @@ def seed_locations_if_missing() -> None:
         inserted_any = False
 
         for row in SEED_LOCATIONS:
-            # ✅ autoflush 방어 (pending insert가 있더라도 조회 시 flush 안 함)
             with session.no_autoflush:
                 exists = session.exec(
                     select(Location).where(
@@ -77,16 +75,6 @@ def seed_locations_if_missing() -> None:
             session.add(Location(**row))
             inserted_any = True
 
-        # ✅ Leeds만 featured=True, 나머지 False로 정리
-        leeds = session.exec(
-            select(Location).where(Location.name == "Leeds", Location.country_code == "GB")
-        ).first()
-
-        if leeds and hasattr(Location, "is_featured"):
-            all_locs = session.exec(select(Location)).all()
-            for loc in all_locs:
-                loc.is_featured = (loc.id == leeds.id)
-            inserted_any = True
 
         if inserted_any:
             session.commit()

@@ -15,7 +15,8 @@ from src.contexts.observations.infra.owm_client import (
     OpenWeatherMapClient,
     OpenWeatherMapError,
 )
-from src.contexts.observations.infra.repo import ObservationRepo
+from src.contexts.observations.domain.repositories import ObservationRepository
+from src.contexts.observations.infra.repo import SqlObservationRepository
 
 
 class ObservationNotFoundError(RuntimeError):
@@ -101,6 +102,7 @@ def fetch_and_store_current_observation(
     *,
     location_id: int,
     client: Optional[OpenWeatherMapClient] = None,
+    repo: Optional[ObservationRepository] = None,
 ) -> Observation:
     """
     Use-case:
@@ -123,6 +125,6 @@ def fetch_and_store_current_observation(
 
     obs = _map_owm_current_to_observation(location_id=location_id, data=data)
 
-    repo = ObservationRepo(session)
+    repo = repo or SqlObservationRepotory(session)
     saved = repo.save_if_not_exists(obs)
     return saved
