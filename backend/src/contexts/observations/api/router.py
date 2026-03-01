@@ -22,7 +22,7 @@ from src.contexts.observations.infra.owm_client import (
     OpenWeatherMapUpstreamError,
     OpenWeatherMapError,
 )
-from src.contexts.observations.infra.repo import ObservationRepo
+from src.contexts.observations.infra.repo import SqlObservationRepository
 
 
 router = APIRouter(prefix="/observations", tags=["observations"])
@@ -60,7 +60,7 @@ def get_latest_observation(
     location_id: int = Query(..., description="Location ID"),
     session: Session = Depends(get_session),
 ):
-    repo = ObservationRepo(session)
+    repo = SqlObservationRepository(session)
     obs = repo.get_latest(location_id=location_id)
     if obs is None:
         raise HTTPException(status_code=404, detail=f"No observation found for location_id={location_id}")
@@ -77,7 +77,7 @@ def list_observations(
     newest_first: bool = Query(True, description="Order by observed_at desc if true"),
     session: Session = Depends(get_session),
 ):
-    repo = ObservationRepo(session)
+    repo = SqlObservationRepository(session)
     items = repo.list_by_location(
         location_id,
         from_dt=from_dt,

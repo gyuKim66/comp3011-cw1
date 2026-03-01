@@ -9,7 +9,7 @@ load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import HTMLResponse, Response
 
 from src.api.router import api_router
 from src.shared.db.session import init_db
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -51,11 +52,25 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    """
-    @app.get("/", tags=["root"])
-    def root() -> dict[str, str]:
-        return {"service": "COMP3011-CW1 API", "docs": "/docs", "status": "ok"}
-    """
+    
+    @app.get("/", include_in_schema=False)
+    def root() -> HTMLResponse:
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        html = f"""
+        <html>
+          <head><title>COMP3011-CW1 API</title></head>
+          <body style="font-family: sans-serif; padding: 24px;">
+            <h2>COMP3011-CW1 API Server</h2>
+            <p>This server provides REST APIs for the Weather service.</p>
+            <ul>
+              <li><a href="/docs">Swagger UI (/docs)</a></li>
+              <li>Frontend: <a href="{frontend_url}">{frontend_url}</a></li>
+            </ul>
+          </body>
+        </html>
+        """
+        return HTMLResponse(content=html)
+
 
     @app.get("/favicon.ico", include_in_schema=False)
     async def favicon():
