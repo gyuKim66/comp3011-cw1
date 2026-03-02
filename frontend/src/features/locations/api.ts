@@ -1,3 +1,6 @@
+// frontend/src/features/locations/api.ts
+
+
 export type Location = {
   id: number;
   name: string;

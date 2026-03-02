@@ -1,57 +1,91 @@
-"use client";
+import WeatherCard from "@/features/home/ui/WeatherCard";
+import WeatherRow from "@/features/home/ui/WeatherRow";
+import { getHome } from "@/features/home/api";
 
-import { useEffect, useState } from "react";
-import { getLocations, Location } from "@/features/locations/api";
 
-export default function Home() {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await getLocations();
-        // featured 먼저 + display_order 정렬
-        data.sort((a, b) =>
-          a.is_featured === b.is_featured
-            ? a.display_order - b.display_order
-            : a.is_featured
-            ? -1
-            : 1
-        );
-        setLocations(data);
-      } catch (e) {
-        console.error("Failed to fetch locations", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, []);
+export default async function HomePage() {
+  const data = await getHome();
 
   return (
-    <main style={{ padding: 32, fontFamily: "sans-serif" }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700 }}>
-        🌍 Weather Dashboard
-      </h1>
+    <main
+      style={{
+        height: "100vh",
+        display: "grid",
+        gridTemplateRows: "auto 1fr",
+        gap: 14,
+        padding: 18,
+        background: "#f3f4f6",
+        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      }}
+    >
+      {/* ✅ 상단 프레임: 왼쪽 50%만 사용 + 오른쪽 비움 */}
+      <section
+        style={{
+          background: "#ffffff",
+          borderRadius: 16,
+          padding: 18,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        }}
+      >
+        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 12 }}>
+          Default Location
+        </h1>
 
-      {loading ? (
-        <p style={{ marginTop: 20 }}>Loading locations...</p>
-      ) : (
-        <ul style={{ marginTop: 20 }}>
-          {locations.map((loc) => (
-            <li key={loc.id} style={{ marginBottom: 12 }}>
-              <strong>{loc.name}</strong> ({loc.country_code})
-              {loc.is_featured && (
-                <span style={{ marginLeft: 10, color: "red" }}>
-                  ⭐ Featured
-                </span>
-              )}
-            </li>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          {/* left half */}
+          <div>
+            {data.default ? (
+              <WeatherCard item={data.default} variant="default" />
+            ) : (
+              <div style={{ color: "#6b7280" }}>default location이 없습니다.</div>
+            )}
+          </div>
+
+          {/* right half (empty) */}
+          <div />
+        </div>
+      </section>
+
+      {/* ✅ 하단 프레임: 카드 대신 리스트 */}
+      <section
+        style={{
+          background: "#ffffff",
+          borderRadius: 16,
+          padding: 18,
+          overflowY: "auto",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        }}
+      >
+        <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10 }}>
+          My Locations
+        </h2>
+
+        {/* 리스트 헤더 */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "220px 120px 1fr 220px",
+            gap: 12,
+            padding: "10px 10px",
+            borderBottom: "1px solid #e5e7eb",
+            color: "#6b7280",
+            fontSize: 12,
+            fontWeight: 800,
+          }}
+        >
+          <div>Location</div>
+          <div>Temp</div>
+          <div>Weather</div>
+          <div style={{ textAlign: "right" }}>Observed at</div>
+        </div>
+
+        {/* 리스트 바디 */}
+        <div>
+          {data.list.map((item) => (
+            <WeatherRow key={item.location.id} item={item} />
           ))}
-        </ul>
-      )}
+        </div>
+      </section>
     </main>
   );
 }

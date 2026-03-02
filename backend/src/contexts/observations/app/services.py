@@ -125,6 +125,6 @@ def fetch_and_store_current_observation(
 
     obs = _map_owm_current_to_observation(location_id=location_id, data=data)
 
-    repo = repo or SqlObservationRepotory(session)
+    repo = repo or SqlObservationRepository(session)
     saved = repo.save_if_not_exists(obs)
     return saved
