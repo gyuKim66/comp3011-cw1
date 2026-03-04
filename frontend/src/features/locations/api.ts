@@ -1,6 +1,8 @@
 // frontend/src/features/locations/api.ts
 
 
+import { apiGet, apiPatch, apiPost } from "@/shared/api/client";
+
 export type Location = {
   id: number;
   name: string;
@@ -8,16 +10,54 @@ export type Location = {
   lat: number;
   lon: number;
   is_featured: boolean;
-  display_order: number;
   is_active: boolean;
+  display_order?: number;
+
 };
 
 export async function getLocations(): Promise<Location[]> {
-  const res = await fetch("http://127.0.0.1:8000/locations");
+  return apiGet<Location[]>("/locations");
+}
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch locations");
-  }
+export type PatchLocationRequest = {
+  is_featured?: boolean;
+  is_active?: boolean;
+  display_order?: number;
+};
 
-  return res.json();
+export async function patchLocation(
+  locationId: number,
+  body: PatchLocationRequest
+): Promise<Location> {
+  return apiPatch<Location, PatchLocationRequest>(`/locations/${locationId}`, body);
+}
+
+export type LocationSearchItem = {
+  name: string;
+  country_code: string;
+  lat: number;
+  lon: number;
+  state?: string | null;
+};
+
+export async function searchLocations(
+  q: string,
+  limit = 5
+): Promise<LocationSearchItem[]> {
+  const params = new URLSearchParams({ q, limit: String(limit) });
+  return apiGet<LocationSearchItem[]>(`/locations/search?${params.toString()}`);
+}
+
+export type CreateLocationRequest = {
+  name: string;
+  country_code: string;
+  lat: number;
+  lon: number;
+  is_active: boolean;
+  is_featured: boolean;
+  display_order?: number; // ✅ optional (서버 자동부여)
+};
+
+export async function createLocation(body: CreateLocationRequest): Promise<Location> {
+  return apiPost<Location, CreateLocationRequest>("/locations", body);
 }
