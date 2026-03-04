@@ -61,7 +61,7 @@ def get_latest_observation(
     session: Session = Depends(get_session),
 ):
     repo = SqlObservationRepository(session)
-    obs = repo.get_latest(location_id=location_id)
+    obs = repo.get_latest_by_location_id(location_id)
     if obs is None:
         raise HTTPException(status_code=404, detail=f"No observation found for location_id={location_id}")
     return obs

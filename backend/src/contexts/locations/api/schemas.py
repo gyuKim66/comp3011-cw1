@@ -1,11 +1,11 @@
-"""
-Author: Dongwook Kim
-Created: 2026-02-24
+# src/contexts/locations/api/schemas.py
+# Location API schemas.
 
-Location API schemas.
-"""
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field
+from typing import Optional
 
 
 class CreateLocationRequest(BaseModel):
@@ -15,9 +15,10 @@ class CreateLocationRequest(BaseModel):
     lon: float
 
     is_featured: bool = False
-    display_order: int = 0
     is_active: bool = True
 
+    display_order: Optional[int] = None
+    
 
 class LocationResponse(BaseModel):
     id: int
@@ -29,3 +30,17 @@ class LocationResponse(BaseModel):
     is_featured: bool
     display_order: int
     is_active: bool
+
+
+class UpdateLocationRequest(BaseModel):
+    is_featured: Optional[bool] = None
+    is_active: Optional[bool] = None
+    display_order: Optional[int] = None
+
+
+class LocationSearchItem(BaseModel):
+    name: str
+    country_code: str
+    lat: float
+    lon: float
+    state: str | None = None

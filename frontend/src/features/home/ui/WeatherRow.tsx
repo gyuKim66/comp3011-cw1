@@ -1,76 +1,89 @@
 // frontend/src/features/home/ui/WeatherRow.tsx
 
-import type { HomeItemDTO } from "../api";
 
-function formatDateTime(iso: string) {
+"use client";
+
+type Props = {
+  item: any;
+  onPromote: () => void;
+};
+
+function fmtTimeStable(iso: string) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return d.toLocaleString();
+  // ✅ locale mismatch(수화 오류) 방지: 고정 포맷
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
-export default function WeatherRow({ item }: { item: HomeItemDTO }) {
-  const { location, latest } = item;
+export default function WeatherRow({ item, onPromote }: Props) {
+  // ✅ 핵심: Home API / optimistic 모두 "latest" 구조를 사용한다
+  const locationName = item?.location?.name ?? "(unknown)";
+  const temp = item?.latest?.temp;
+  const weather =
+    item?.latest?.weather_desc ??
+    item?.latest?.weather_main ??
+    "—";
+  const observedAt = item?.latest?.observed_at ?? "";
 
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "220px 110px 1fr 220px",
+        gridTemplateColumns: "220px 120px 1fr 220px",
         gap: 12,
+        padding: "10px 10px",
+        borderBottom: "1px solid #f3f4f6",
         alignItems: "center",
-        padding: "12px 10px",
-        borderBottom: "1px solid #f1f5f9",
         fontSize: 14,
       }}
     >
-      <div style={{ fontWeight: 800 }}>
-        {location.name}{" "}
-        <span style={{ color: "#6b7280", fontWeight: 600 }}>
-          ({location.country_code})
-        </span>
-
-        {location.is_featured && (
-          <span
-            style={{
-              marginLeft: 8,
-              fontSize: 11,
-              padding: "2px 8px",
-              borderRadius: 999,
-              background: "#ede9fe",
-              color: "#5b21b6",
-              fontWeight: 800,
-            }}
-          >
-            Featured
+      {/* Location + 상단등록(작게, 위첨자 느낌) */}
+      <div style={{ fontWeight: 800, color: "#111827", minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {locationName}
           </span>
-        )}
+
+          <button
+            type="button"
+            onClick={onPromote}
+            style={{
+              border: "1px solid #c7d2fe",
+              background: "#eef2ff",
+              color: "#3730a3",
+              borderRadius: 999,
+              padding: "1px 6px",
+              fontSize: 10,
+              fontWeight: 900,
+              cursor: "pointer",
+              lineHeight: 1.2,
+              position: "relative",
+              top: -6, // ✅ 위첨자처럼
+              whiteSpace: "nowrap",
+            }}
+            aria-label="Promote to top WeatherCard"
+            title="상단에 등록"
+          >
+            상단등록
+          </button>
+        </div>
       </div>
 
       <div style={{ fontWeight: 900 }}>
-        {latest ? `${latest.temp.toFixed(1)}°C` : "—"}
+        {temp === null || temp === undefined ? "--" : `${Math.round(Number(temp))}°`}
       </div>
 
-      <div style={{ color: "#374151" }}>
-        {latest ? (
-          <>
-            <span style={{ fontWeight: 700 }}>
-              {latest.weather_main ?? "—"}
-            </span>
-            <span style={{ color: "#6b7280" }}>
-              {latest.weather_desc ? ` · ${latest.weather_desc}` : ""}
-            </span>
-            <span style={{ color: "#6b7280" }}>
-              {latest.humidity != null ? ` · humidity ${latest.humidity}` : ""}
-              {latest.wind_speed != null ? ` · wind ${latest.wind_speed}` : ""}
-            </span>
-          </>
-        ) : (
-          <span style={{ color: "#9ca3af" }}>관측 데이터 없음</span>
-        )}
+      <div style={{ color: "#374151", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {String(weather)}
       </div>
 
-      <div style={{ fontSize: 12, color: "#6b7280", textAlign: "right" }}>
-        {latest ? formatDateTime(latest.observed_at) : ""}
+      <div style={{ textAlign: "right", color: "#6b7280", fontSize: 12 }}>
+        {observedAt ? fmtTimeStable(String(observedAt)) : ""}
       </div>
     </div>
   );

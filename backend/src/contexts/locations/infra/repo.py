@@ -72,3 +72,38 @@ class SqlLocationRepository(LocationRepository):
             is_featured=row.is_featured,
             display_order=row.display_order,
         )
+    
+
+    def update(
+        self,
+        location_id: int,
+        *,
+        is_featured: bool | None = None,
+        is_active: bool | None = None,
+        display_order: int | None = None,
+    ) -> LocationEntity | None:
+        row = self.session.get(Location, location_id)
+        if row is None:
+            return None
+
+        if is_featured is not None:
+            row.is_featured = is_featured
+        if is_active is not None:
+            row.is_active = is_active
+        if display_order is not None:
+            row.display_order = display_order
+
+        self.session.add(row)
+        self.session.commit()
+        self.session.refresh(row)
+
+        return LocationEntity(
+            id=row.id,
+            name=row.name,
+            country_code=row.country_code,
+            lat=row.lat,
+            lon=row.lon,
+            is_active=row.is_active,
+            is_featured=row.is_featured,
+            display_order=row.display_order,
+        )

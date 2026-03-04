@@ -1,5 +1,4 @@
-# src/contexts/home/api/schemas.py
-
+# backend/src/contexts/home/api/schemas.py
 
 
 from __future__ import annotations
@@ -43,5 +42,5 @@ class HomeItemDTO(BaseModel):
 
 class HomeResponse(BaseModel):
     generated_at: datetime
-    default: Optional[HomeItemDTO] = None
+    featured: list[HomeItemDTO]   # ✅ 최대 2개
     list: list[HomeItemDTO]

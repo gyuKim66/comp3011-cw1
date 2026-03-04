@@ -1,31 +1,18 @@
-# src/contexts/home/app/services.py
+# backend/src/contexts/home/app/services.py
 
 
 from __future__ import annotations
 
-import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
-from sqlmodel import Session
-
-from src.contexts.home.api.schemas import (
-    HomeItemDTO,
-    HomeResponse,
-    LatestObservationDTO,
-    LocationDTO,
-)
-from src.contexts.locations.app.services import get_default_location, list_locations
-from src.contexts.locations.domain.repositories import LocationRepository
-from src.contexts.observations.domain.repositories import ObservationRepository
-from src.contexts.observations.app.services import fetch_and_store_current_observation
-
-
-HOME_TTL_MINUTES = int(os.getenv("HOME_TTL_MINUTES", "10"))
+from src.contexts.home.api.schemas import HomeResponse, HomeItemDTO, LocationDTO, LatestObservationDTO
+from src.contexts.locations.app.services import list_locations
+from src.contexts.observations.domain.entities import ObservationEntity
 
 
 def _to_location_dto(loc) -> LocationDTO:
     return LocationDTO(
-        id=loc.id,  # type: ignore[arg-type]
+        id=loc.id or 0,
         name=loc.name,
         country_code=loc.country_code,
         lat=loc.lat,
@@ -36,7 +23,9 @@ def _to_location_dto(loc) -> LocationDTO:
     )
 
 
-def _to_latest_dto(obs) -> LatestObservationDTO:
+def _to_latest_dto(obs: ObservationEntity | None) -> LatestObservationDTO | None:
+    if obs is None:
+        return None
     return LatestObservationDTO(
         observed_at=obs.observed_at,
         temp=obs.temp,
@@ -53,88 +42,62 @@ def _to_latest_dto(obs) -> LatestObservationDTO:
     )
 
 
-def _is_stale(observed_at: datetime | None, *, now: datetime) -> bool:
-    if observed_at is None:
-        return True
-    if observed_at.tzinfo is None:
-        observed_at = observed_at.replace(tzinfo=timezone.utc)
-    return (now - observed_at) > timedelta(minutes=HOME_TTL_MINUTES)
-
-
-def _refresh_if_needed(
-    *,
-    session: Session,
-    obs_repo: ObservationRepository,
-    location_id: int,
-    now: datetime,
-) -> None:
-    latest = obs_repo.get_latest_by_location_id(location_id)
-    if latest is None or _is_stale(latest.observed_at, now=now):
-        fetch_and_store_current_observation(session, location_id=location_id)
-
-
 def get_home_view(
-    session: Session,
-    location_repo: LocationRepository,
-    obs_repo: ObservationRepository,
     *,
-    refresh: bool = True,
+    session,
+    location_repo,
+    obs_repo,
+    refresh: bool,
 ) -> HomeResponse:
-    """
-    Build home view model:
-    - default: featured-first fallback among active locations
-    - list: active locations excluding default
-    - latest: latest observation per location (nullable)
-    - refresh(TTL): if stale/missing, fetch from OWM and store into DB
-    """
-    now = datetime.now(timezone.utc)
+    # ✅ 1) active locations 가져오기 (정렬 포함)
+    locations = list_locations(location_repo, active_only=True)
 
-    default_loc = get_default_location(location_repo)
-    active_locs = list_locations(location_repo, active_only=True)
+    generated_at = datetime.now(timezone.utc)
 
-    default_id = default_loc.id if default_loc else None
-    list_locs = [l for l in active_locs if l.id != default_id]
+    if not locations:
+        return HomeResponse(generated_at=generated_at, featured=[], list=[])
 
-    ids: list[int] = []
-    if default_id is not None:
-        ids.append(default_id)
-    ids.extend([l.id for l in list_locs if l.id is not None])
+    # ✅ 2) 각 location의 latest observation 가져오기 (batch)
+    loc_ids = [l.id for l in locations if l.id is not None]
+    latest_map = obs_repo.get_latest_for_location_ids(loc_ids)
 
-    # ✅ TTL 기반 refresh
-    if refresh:
-        for loc_id in ids:
-            _refresh_if_needed(
-                session=session,
-                obs_repo=obs_repo,
-                location_id=loc_id,
-                now=now,
-            )
-
-    # refresh 후 최신값 batch 로드
-    latest_map = obs_repo.get_latest_for_location_ids(ids)
-
-    default_item = None
-    if default_loc is not None and default_loc.id is not None:
-        latest = latest_map.get(default_loc.id)
-        default_item = HomeItemDTO(
-            location=_to_location_dto(default_loc),
-            latest=_to_latest_dto(latest) if latest else None,
-        )
-
+    # ✅ 3) HomeItemDTO 리스트 조립
     items: list[HomeItemDTO] = []
-    for loc in list_locs:
+    for loc in locations:
         if loc.id is None:
             continue
         latest = latest_map.get(loc.id)
         items.append(
             HomeItemDTO(
                 location=_to_location_dto(loc),
-                latest=_to_latest_dto(latest) if latest else None,
+                latest=_to_latest_dto(latest),
             )
         )
 
+    # ✅ 4) featured 2개 구성: is_featured 우선 + 부족하면 앞에서 채움
+    featured: list[HomeItemDTO] = []
+
+    featured_candidates = [x for x in items if x.location.is_featured]
+    featured_candidates.sort(key=lambda x: (x.location.display_order, x.location.name))
+
+    for x in featured_candidates:
+        if len(featured) >= 2:
+            break
+        featured.append(x)
+
+    if len(featured) < 2:
+        for x in items:
+            if len(featured) >= 2:
+                break
+            if any(f.location.id == x.location.id for f in featured):
+                continue
+            featured.append(x)
+
+    featured_ids = {x.location.id for x in featured}
+    rest = [x for x in items if x.location.id not in featured_ids]
+
     return HomeResponse(
-        generated_at=now,
-        default=default_item,
-        list=items,
+        generated_at=generated_at,
+        featured=featured,
+        list=rest,
     )
