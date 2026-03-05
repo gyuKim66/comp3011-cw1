@@ -1,14 +1,8 @@
 # src/contexts/locations/api/router.py
 
 
-"""
-Author: Dongwook Kim
-Created: 2026-02-24
 
-Locations API router.
-"""
-
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlmodel import Session
 
 from src.contexts.locations.api.schemas import (
@@ -159,3 +153,30 @@ def patch_one(location_id: int, dto: UpdateLocationRequest) -> LocationResponse:
             is_active=loc.is_active,
         )
     
+    
+@router.delete("/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_one(location_id: int) -> Response:
+    """
+    Soft delete:
+    - DB row는 삭제하지 않음
+    - is_active=False 로 비활성화하여 목록에서 제외
+    - (권장) featured 상태도 함께 해제
+    """
+    with get_session() as session:
+        repo = SqlLocationRepository(session)
+
+        loc = get_location(repo, location_id)
+        if loc is None:
+            raise HTTPException(status_code=404, detail="Location not found")
+
+        # ✅ soft delete
+        loc = update_location(
+            repo,
+            location_id,
+            is_active=False,
+            is_featured=False,  # ✅ 상단 featured에 남아있지 않게
+        )
+        if loc is None:
+            raise HTTPException(status_code=404, detail="Location not found")
+
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
