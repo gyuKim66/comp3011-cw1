@@ -1,13 +1,22 @@
 # backend/src/contexts/home/app/services.py
 
-
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
-from src.contexts.home.api.schemas import HomeResponse, HomeItemDTO, LocationDTO, LatestObservationDTO
+from src.contexts.home.api.schemas import (
+    HomeResponse,
+    HomeItemDTO,
+    LocationDTO,
+    LatestObservationDTO,
+)
 from src.contexts.locations.app.services import list_locations
 from src.contexts.observations.domain.entities import ObservationEntity
+
+# ✅ 존재하는 함수로 바꾸기
+from src.contexts.observations.app.services import fetch_and_store_current_observation
+
+FRESHNESS_MINUTES = 10
 
 
 def _to_location_dto(loc) -> LocationDTO:
@@ -42,6 +51,12 @@ def _to_latest_dto(obs: ObservationEntity | None) -> LatestObservationDTO | None
     )
 
 
+def _is_stale(obs: ObservationEntity | None, *, now: datetime) -> bool:
+    if obs is None:
+        return True
+    return obs.observed_at < (now - timedelta(minutes=FRESHNESS_MINUTES))
+
+
 def get_home_view(
     *,
     session,
@@ -49,55 +64,45 @@ def get_home_view(
     obs_repo,
     refresh: bool,
 ) -> HomeResponse:
-    # ✅ 1) active locations 가져오기 (정렬 포함)
     locations = list_locations(location_repo, active_only=True)
-
-    generated_at = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc)
 
     if not locations:
-        return HomeResponse(generated_at=generated_at, featured=[], list=[])
+        return HomeResponse(generated_at=now, featured=[], list=[])
 
-    # ✅ 2) 각 location의 latest observation 가져오기 (batch)
     loc_ids = [l.id for l in locations if l.id is not None]
+
+    # 1) 현재 latest 읽기
     latest_map = obs_repo.get_latest_for_location_ids(loc_ids)
 
-    # ✅ 3) HomeItemDTO 리스트 조립
+    # 2) stale 판정 → 갱신 대상 추리기
+    stale_ids = [loc_id for loc_id in loc_ids if refresh or _is_stale(latest_map.get(loc_id), now=now)]
+
+    # 3) stale이면 OWM 재조회 후 DB 저장
+    if stale_ids:
+        for loc_id in stale_ids:
+            try:
+                fetch_and_store_current_observation(session, location_id=loc_id)
+            except Exception:
+                # Home은 계속 응답 내려주되, 실패한 location은 기존 latest 유지
+                pass
+
+        # 4) 저장 후 latest 다시 읽기
+        latest_map = obs_repo.get_latest_for_location_ids(loc_ids)
+
+    # 5) DTO 조립
     items: list[HomeItemDTO] = []
     for loc in locations:
         if loc.id is None:
             continue
         latest = latest_map.get(loc.id)
-        items.append(
-            HomeItemDTO(
-                location=_to_location_dto(loc),
-                latest=_to_latest_dto(latest),
-            )
-        )
-
-    # ✅ 4) featured 2개 구성: is_featured 우선 + 부족하면 앞에서 채움
-    featured: list[HomeItemDTO] = []
+        items.append(HomeItemDTO(location=_to_location_dto(loc), latest=_to_latest_dto(latest)))
 
     featured_candidates = [x for x in items if x.location.is_featured]
     featured_candidates.sort(key=lambda x: (x.location.display_order, x.location.name))
-
-    for x in featured_candidates:
-        if len(featured) >= 2:
-            break
-        featured.append(x)
-
-    if len(featured) < 2:
-        for x in items:
-            if len(featured) >= 2:
-                break
-            if any(f.location.id == x.location.id for f in featured):
-                continue
-            featured.append(x)
+    featured = featured_candidates[:2]
 
     featured_ids = {x.location.id for x in featured}
     rest = [x for x in items if x.location.id not in featured_ids]
 
-    return HomeResponse(
-        generated_at=generated_at,
-        featured=featured,
-        list=rest,
-    )
+    return HomeResponse(generated_at=now, featured=featured, list=rest)

@@ -1,6 +1,5 @@
 // frontend/src/features/home/ui/HomeClient.tsx
 
-
 "use client";
 
 import { useMemo, useRef, useState } from "react";
@@ -20,8 +19,9 @@ type Props = {
 export default function HomeClient({ initialData }: Props) {
   const router = useRouter();
 
-  const [data] = useState<HomeResponse>(initialData);
-
+  // const [data] = useState<HomeResponse>(initialData);
+  const data = initialData;
+  
   const initialFeatured: [HomeItemDTO | null, HomeItemDTO | null] = [
     data.featured?.[0] ?? null,
     data.featured?.[1] ?? null,
@@ -30,10 +30,8 @@ export default function HomeClient({ initialData }: Props) {
   const [featured, setFeatured] =
     useState<[HomeItemDTO | null, HomeItemDTO | null]>(initialFeatured);
 
-  // optimistic list (새로 추가된 도시를 즉시 보이게)
   const [optimistic, setOptimistic] = useState<HomeItemDTO[]>([]);
 
-  // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
@@ -43,7 +41,6 @@ export default function HomeClient({ initialData }: Props) {
     toastTimer.current = window.setTimeout(() => setToastMessage(null), 2500);
   };
 
-  // list = (서버 list + optimistic) - featured
   const listItems = useMemo(() => {
     const base = [...optimistic, ...data.list];
 
@@ -64,7 +61,6 @@ export default function HomeClient({ initialData }: Props) {
     return merged;
   }, [data.list, optimistic, featured]);
 
-  // ✅ DB 반영 포함: 삭제(Featured 해제)
   const removeFeatured = async (index: 0 | 1) => {
     const target = featured[index];
     if (!target) return;
@@ -74,30 +70,25 @@ export default function HomeClient({ initialData }: Props) {
     try {
       await patchLocation(locId, { is_featured: false });
 
-      // UI 재배치(왼쪽 삭제면 오른쪽이 왼쪽으로)
       setFeatured((prev) => {
         if (!prev[index]) return prev;
         if (index === 0) return [prev[1] ?? null, null];
         return [prev[0], null];
       });
 
-      // 서버 스냅샷 재조회 → 아래 list로 내려오는 것도 여기서 확정
       router.refresh();
     } catch (e) {
       showToast(`삭제(Featured 해제) 실패: ${String(e)}`);
     }
   };
 
-  // ✅ DB 반영 포함: 상단등록(Featured 설정)
   const promoteToFeatured = async (item: HomeItemDTO) => {
     const locId = item.location.id;
 
-    // 이미 featured면 아무 것도 안 함
     const already =
       featured[0]?.location.id === locId || featured[1]?.location.id === locId;
     if (already) return;
 
-    // UI 기준으로 2개 꽉 차있으면 서버 호출 전에 토스트
     if (featured[0] && featured[1]) {
       showToast("상단 WeatherCard는 최대 2개까지만 등록할 수 있습니다.");
       return;
@@ -106,14 +97,12 @@ export default function HomeClient({ initialData }: Props) {
     try {
       await patchLocation(locId, { is_featured: true });
 
-      // UI 즉시 반영(빈 슬롯에 넣기)
       setFeatured((prev) => {
         if (!prev[0]) return [item, prev[1]];
         if (!prev[1]) return [prev[0], item];
         return prev;
       });
 
-      // 서버 스냅샷 재조회(정렬/featured 제외 list 재계산 포함)
       router.refresh();
     } catch (e) {
       const msg = String(e);
@@ -125,7 +114,6 @@ export default function HomeClient({ initialData }: Props) {
     }
   };
 
-  // AddLocationBox에서 최신값까지 포함해 즉시 업데이트
   const onCreated = (payload: any) => {
     const loc = payload?.location ?? payload;
     const latest = payload?.latest ?? null;
@@ -139,7 +127,9 @@ export default function HomeClient({ initialData }: Props) {
     setOptimistic((prev) => {
       const exists = prev.some((x) => x.location.id === id);
       if (!exists) return [{ location: loc, latest }, ...prev];
-      return prev.map((x) => (x.location.id === id ? { location: loc, latest } : x));
+      return prev.map((x) =>
+        x.location.id === id ? { location: loc, latest } : x
+      );
     });
   };
 
@@ -153,8 +143,7 @@ export default function HomeClient({ initialData }: Props) {
           gap: 14,
           padding: 18,
           background: "#f3f4f6",
-          fontFamily:
-            "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+          fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
         }}
       >
         {/* 상단 2-card */}
@@ -211,10 +200,18 @@ export default function HomeClient({ initialData }: Props) {
             padding: 18,
             overflowY: "auto",
             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-            display: "grid",
+
+            // ✅ grid → flex 로 변경 (항상 위에서부터)
+            display: "flex",
+            flexDirection: "column",
             gap: 12,
-          }}
-        >
+
+            // ✅ 혹시 모를 가운데 정렬 방지
+            justifyContent: "flex-start",
+            alignItems: "stretch",
+            }}
+          >
+            
           <h2 style={{ fontSize: 18, fontWeight: 900 }}>My Locations</h2>
 
           <AddLocationBox
@@ -249,6 +246,9 @@ export default function HomeClient({ initialData }: Props) {
                 key={item.location.id}
                 item={item}
                 onPromote={() => promoteToFeatured(item)}
+                showDelete={true}                 // ✅ 하단에서만 Delete 버튼 노출
+                onDeleted={() => router.refresh()} // ✅ 삭제 후 목록 갱신
+                toast={showToast}                 // ✅ 삭제 성공/실패 토스트
               />
             ))}
           </div>

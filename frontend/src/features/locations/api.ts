@@ -1,7 +1,7 @@
 // frontend/src/features/locations/api.ts
 
 
-import { apiGet, apiPatch, apiPost } from "@/shared/api/client";
+import { apiGet, apiPatch, apiPost, apiDelete } from "@/shared/api/client";
 
 export type Location = {
   id: number;
@@ -31,6 +31,11 @@ export async function patchLocation(
 ): Promise<Location> {
   return apiPatch<Location, PatchLocationRequest>(`/locations/${locationId}`, body);
 }
+
+export async function deleteLocation(locationId: number): Promise<void> {
+  await apiDelete(`/locations/${locationId}`);
+}
+
 
 export type LocationSearchItem = {
   name: string;

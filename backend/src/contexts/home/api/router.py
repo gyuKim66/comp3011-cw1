@@ -18,7 +18,7 @@ router = APIRouter(prefix="/home", tags=["home"])
 
 @router.get("", response_model=HomeResponse)
 def home(
-    refresh: bool = Query(True),
+    refresh: bool = Query(False),
     session: Session = Depends(get_session),
     location_repo: LocationRepository = Depends(get_location_repo),
     obs_repo: ObservationRepository = Depends(get_observation_repo),
