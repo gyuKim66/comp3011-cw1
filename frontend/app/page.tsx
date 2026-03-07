@@ -7,5 +7,6 @@ import HomeClient from "@/features/home/ui/HomeClient";
 export default async function HomePage() {
   const data = await getHome();
 
+  
   return <HomeClient initialData={data} />;
 }
