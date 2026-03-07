@@ -2,7 +2,11 @@
 
 from fastapi import HTTPException
 
-from src.contexts.analytics.domain.entities import TemperatureStats
+from src.contexts.analytics.domain.entities import (
+    TemperatureStats,
+    HumidityStats,
+    TemperatureTrend,
+)
 from src.contexts.analytics.domain.repositories import AnalyticsRepository
 from src.contexts.locations.domain.repositories import LocationRepository
 
@@ -27,6 +31,36 @@ class AnalyticsService:
             raise HTTPException(status_code=404, detail="Location not found")
 
         return self.analytics_repo.get_temperature_stats(
+            location_id=location_id,
+            days=days,
+        )
+
+    def get_humidity_stats(
+        self,
+        location_id: int,
+        days: int | None = None,
+    ) -> HumidityStats:
+        location = self.location_repo.get(location_id)
+
+        if location is None or not location.is_active:
+            raise HTTPException(status_code=404, detail="Location not found")
+
+        return self.analytics_repo.get_humidity_stats(
+            location_id=location_id,
+            days=days,
+        )
+
+    def get_temperature_trend(
+        self,
+        location_id: int,
+        days: int,
+    ) -> TemperatureTrend:
+        location = self.location_repo.get(location_id)
+
+        if location is None or not location.is_active:
+            raise HTTPException(status_code=404, detail="Location not found")
+
+        return self.analytics_repo.get_temperature_trend(
             location_id=location_id,
             days=days,
         )
