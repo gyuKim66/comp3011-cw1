@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { HomeResponse, HomeItemDTO } from "@/features/home/api";
@@ -18,10 +18,8 @@ type Props = {
 
 export default function HomeClient({ initialData }: Props) {
   const router = useRouter();
-
-  // const [data] = useState<HomeResponse>(initialData);
   const data = initialData;
-  
+
   const initialFeatured: [HomeItemDTO | null, HomeItemDTO | null] = [
     data.featured?.[0] ?? null,
     data.featured?.[1] ?? null,
@@ -31,9 +29,12 @@ export default function HomeClient({ initialData }: Props) {
     useState<[HomeItemDTO | null, HomeItemDTO | null]>(initialFeatured);
 
   const [optimistic, setOptimistic] = useState<HomeItemDTO[]>([]);
-
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    setFeatured(initialFeatured);
+  }, [data.featured?.[0]?.location.id, data.featured?.[1]?.location.id]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -70,6 +71,13 @@ export default function HomeClient({ initialData }: Props) {
     try {
       await patchLocation(locId, { is_featured: false });
 
+      if (index === 0 && featured[1]) {
+        await patchLocation(featured[1].location.id, {
+          is_featured: true,
+          display_order: 0,
+        });
+      }
+
       setFeatured((prev) => {
         if (!prev[index]) return prev;
         if (index === 0) return [prev[1] ?? null, null];
@@ -95,13 +103,19 @@ export default function HomeClient({ initialData }: Props) {
     }
 
     try {
-      await patchLocation(locId, { is_featured: true });
-
-      setFeatured((prev) => {
-        if (!prev[0]) return [item, prev[1]];
-        if (!prev[1]) return [prev[0], item];
-        return prev;
-      });
+      if (!featured[0]) {
+        await patchLocation(locId, {
+          is_featured: true,
+          display_order: 0,
+        });
+        setFeatured((prev) => [item, prev[1]]);
+      } else if (!featured[1]) {
+        await patchLocation(locId, {
+          is_featured: true,
+          display_order: 1,
+        });
+        setFeatured((prev) => [prev[0], item]);
+      }
 
       router.refresh();
     } catch (e) {
@@ -200,18 +214,13 @@ export default function HomeClient({ initialData }: Props) {
             padding: 18,
             overflowY: "auto",
             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-
-            // ✅ grid → flex 로 변경 (항상 위에서부터)
             display: "flex",
             flexDirection: "column",
             gap: 12,
-
-            // ✅ 혹시 모를 가운데 정렬 방지
             justifyContent: "flex-start",
             alignItems: "stretch",
-            }}
-          >
-            
+          }}
+        >
           <h2 style={{ fontSize: 18, fontWeight: 900 }}>My Locations</h2>
 
           <AddLocationBox
@@ -220,7 +229,6 @@ export default function HomeClient({ initialData }: Props) {
             onDone={() => router.refresh()}
           />
 
-          {/* 리스트 헤더 */}
           <div
             style={{
               display: "grid",
@@ -239,16 +247,15 @@ export default function HomeClient({ initialData }: Props) {
             <div style={{ textAlign: "right" }}>Observed at</div>
           </div>
 
-          {/* 리스트 바디 */}
-          <div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {listItems.map((item) => (
               <WeatherRow
                 key={item.location.id}
                 item={item}
                 onPromote={() => promoteToFeatured(item)}
-                showDelete={true}                 // ✅ 하단에서만 Delete 버튼 노출
-                onDeleted={() => router.refresh()} // ✅ 삭제 후 목록 갱신
-                toast={showToast}                 // ✅ 삭제 성공/실패 토스트
+                showDelete={true}
+                onDeleted={() => router.refresh()}
+                toast={showToast}
               />
             ))}
           </div>

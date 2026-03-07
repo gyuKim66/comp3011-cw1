@@ -99,7 +99,7 @@ def get_home_view(
         items.append(HomeItemDTO(location=_to_location_dto(loc), latest=_to_latest_dto(latest)))
 
     featured_candidates = [x for x in items if x.location.is_featured]
-    featured_candidates.sort(key=lambda x: (x.location.display_order, x.location.name))
+    featured_candidates.sort(key=lambda x: x.location.display_order)
     featured = featured_candidates[:2]
 
     featured_ids = {x.location.id for x in featured}
