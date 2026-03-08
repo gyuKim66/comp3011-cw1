@@ -1,4 +1,6 @@
 # backend/src/shared/db/base.py
+
+
 from sqlmodel import SQLModel
 
 # Import all ORM models so metadata is populated

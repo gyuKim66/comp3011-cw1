@@ -1,9 +1,6 @@
-"""
-Author: Dongwook Kim
-Created: 2026-02-24
+# backend/src/shared/db/session.py
 
-Database engine/session factory (SQLModel).
-"""
+from collections.abc import Generator
 
 from sqlmodel import SQLModel, Session, create_engine
 
@@ -16,13 +13,20 @@ def get_engine():
     global _engine
     if _engine is None:
         if not settings.database_url:
-            raise RuntimeError("DATABASE_URL is not set. Create backend/.env from .env.example.")
-        _engine = create_engine(settings.database_url, echo=False)
+            raise RuntimeError(
+                "DATABASE_URL is not set. Create backend/.env from .env.example."
+            )
+        _engine = create_engine(
+            settings.database_url,
+            echo=False,
+            pool_pre_ping=True,
+        )
     return _engine
 
 
-def get_session() -> Session:
-    return Session(get_engine())
+def get_session() -> Generator[Session, None, None]:
+    with Session(get_engine()) as session:
+        yield session
 
 
 def init_db() -> None:
