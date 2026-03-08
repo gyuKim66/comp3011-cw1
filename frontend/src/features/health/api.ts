@@ -1,3 +1,6 @@
+// frontend/src/features/health/api.ts
+
+
 import { apiGet } from "@/shared/api/client";
 
 export type HealthResponse = { status: string };

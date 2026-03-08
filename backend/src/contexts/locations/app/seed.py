@@ -1,14 +1,12 @@
 # backend/src/contexts/locations/app/seed.py
 # Auto seed for locations
 
-
 from __future__ import annotations
 
 from sqlmodel import Session, select
 
-from src.shared.db.session import get_session  
-from src.contexts.locations.infra.orm import Location  
-
+from src.shared.db.session import get_engine
+from src.contexts.locations.infra.orm import Location
 
 
 SEED_LOCATIONS = [
@@ -28,7 +26,7 @@ SEED_LOCATIONS = [
         lon=-1.5491,
         is_active=True,
         is_featured=True,
-        display_order=1,   # featured면 0/1 순서 주면 화면에 좋음
+        display_order=1,
     ),
     dict(
         name="Manchester",
@@ -57,7 +55,7 @@ def seed_locations_if_missing() -> None:
     - 있으면 skip, 없으면 insert
     - Leeds만 featured=True로 정리(항상 일관성 유지)
     """
-    with get_session() as session:
+    with Session(get_engine()) as session:
         inserted_any = False
 
         for row in SEED_LOCATIONS:
@@ -74,7 +72,6 @@ def seed_locations_if_missing() -> None:
 
             session.add(Location(**row))
             inserted_any = True
-
 
         if inserted_any:
             session.commit()

@@ -118,7 +118,10 @@ export default function WeatherRow({
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button
             type="button"
-            onClick={onDelete}
+            onClick={async (e) => {
+              e.stopPropagation();
+              await onDelete();
+            }}
             style={{
               border: "1px solid #fecaca",
               background: "#fff",

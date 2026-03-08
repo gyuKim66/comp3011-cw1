@@ -1,9 +1,6 @@
-"""
-Author: Dongwook Kim
-Created: 2026-02-24
+# backend/src/shared/db/config.py
 
-Configuration loader.
-"""
+
 
 from dataclasses import dataclass
 import os
