@@ -13,7 +13,6 @@ import AddLocationBox from "@/features/locations/ui/AddLocationBox";
 import { patchLocation } from "@/features/locations/api";
 import AnalyticsPanel from "@/features/analytics/ui/AnalyticsPanel";
 
-
 type Props = {
   initialData: HomeResponse;
 };
@@ -61,13 +60,14 @@ export default function HomeClient({ initialData }: Props) {
     for (const it of base) {
       const id = it.location.id;
 
-      if (!it.location.is_active) continue;   // ⭐ 추가
+      if (!it.location.is_active) continue;
       if (featuredIds.has(id)) continue;
       if (seen.has(id)) continue;
 
       seen.add(id);
       merged.push(it);
     }
+
     return merged;
   }, [data.list, optimistic, featured]);
 
@@ -114,8 +114,8 @@ export default function HomeClient({ initialData }: Props) {
       if (selectedLocationId === locId) {
         const fallbackId =
           index === 0
-            ? (featured[1]?.location.id ?? null)
-            : (featured[0]?.location.id ?? null);
+            ? featured[1]?.location.id ?? null
+            : featured[0]?.location.id ?? null;
 
         setSelectedLocationId(fallbackId);
       }
@@ -155,12 +155,7 @@ export default function HomeClient({ initialData }: Props) {
 
       router.refresh();
     } catch (e) {
-      const msg = String(e);
-      if (msg.includes("409")) {
-        showToast("이미 상단 등록이 2개입니다. 다른 카드를 먼저 삭제하세요.");
-        return;
-      }
-      showToast(`상단 등록 실패: ${msg}`);
+      showToast(`상단 등록 실패: ${String(e)}`);
     }
   };
 
@@ -191,249 +186,181 @@ export default function HomeClient({ initialData }: Props) {
     <>
       <main
         style={{
-          height: "100vh",
-          display: "grid",
-          gridTemplateRows: "auto auto 1fr",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
           gap: 14,
           padding: 18,
           background: "#f3f4f6",
           fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-          overflow: "hidden",
         }}
       >
-        {/* 페이지 헤더 */}
+        {/* Header */}
         <section
           style={{
-            background: "linear-gradient(135deg, #0f172a, #1e293b)",
-            color: "#ffffff",
+            background: "linear-gradient(135deg,#0f172a,#1e293b)",
+            color: "#fff",
             borderRadius: 18,
             padding: "22px 24px",
             boxShadow: "0 6px 18px rgba(0,0,0,0.10)",
-            flexShrink: 0,
           }}
         >
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.4 }}>
+          <div style={{ fontSize: 28, fontWeight: 900 }}>
             Climate & Weather Analytics Dashboard
           </div>
           <div style={{ marginTop: 8, fontSize: 14, color: "#cbd5e1" }}>
-            Monitor featured cities, manage locations, and explore temperature
-            and humidity analytics.
+            Monitor featured cities, manage locations, and explore analytics.
           </div>
         </section>
 
-        {/* Featured Locations */}
+        {/* Featured */}
         <section
           style={{
-            background: "#ffffff",
+            background: "#fff",
             borderRadius: 16,
             padding: 18,
             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-            flexShrink: 0,
           }}
         >
           <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 12 }}>
             Featured Locations
           </h1>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 14,
-            }}
-          >
-            <div
-              onClick={() =>
-                featured[0] && setSelectedLocationId(featured[0].location.id)
-              }
-              style={{
-                cursor: featured[0] ? "pointer" : "default",
-                border:
-                  selectedLocationId === featured[0]?.location.id
-                    ? "2px solid #2563eb"
-                    : "2px solid transparent",
-                borderRadius: 16,
-                transition: "all 0.15s ease",
-              }}
-            >
-              {featured[0] ? (
-                <WeatherCard
-                  item={featured[0]}
-                  variant="default"
-                  onDelete={() => removeFeatured(0)}
-                />
-              ) : (
-                <div style={{ color: "#6b7280" }}>비어 있습니다.</div>
-              )}
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            {featured.map((item, idx) => {
+              const isSelected = selectedLocationId === item?.location.id;
 
-            <div
-              onClick={() =>
-                featured[1] && setSelectedLocationId(featured[1].location.id)
-              }
-              style={{
-                cursor: featured[1] ? "pointer" : "default",
-                border:
-                  selectedLocationId === featured[1]?.location.id
-                    ? "2px solid #2563eb"
-                    : "2px solid transparent",
-                borderRadius: 16,
-                transition: "all 0.15s ease",
-              }}
-            >
-              {featured[1] ? (
-                <WeatherCard
-                  item={featured[1]}
-                  variant="secondary"
-                  onDelete={() => removeFeatured(1)}
-                />
-              ) : (
-                <div style={{ color: "#6b7280" }}>비어 있습니다.</div>
-              )}
-            </div>
+              return (
+                <div
+                  key={idx}
+                  onClick={() => item && setSelectedLocationId(item.location.id)}
+                  style={{
+                    cursor: item ? "pointer" : "default",
+                    border: isSelected
+                      ? "2px solid #2563eb"
+                      : "2px solid transparent",
+                    borderRadius: 16,
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {item ? (
+                    <WeatherCard
+                      item={item}
+                      variant={idx === 0 ? "default" : "secondary"}
+                      onDelete={() => removeFeatured(idx as 0 | 1)}
+                    />
+                  ) : (
+                    <div style={{ color: "#6b7280" }}>비어 있습니다.</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 
-        {/* 하단 2-frame: My Locations + Analytics */}
+        {/* My Locations */}
         <section
           style={{
-            display: "grid",
-            gridTemplateRows: "1fr auto",
-            gap: 14,
-            minHeight: 0,
+            background: "#fff",
+            borderRadius: 16,
+            padding: 18,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           }}
         >
-          {/* My Locations */}
-          <section
+          <h2 style={{ fontSize: 18, fontWeight: 900 }}>My Locations</h2>
+
+          <AddLocationBox
+            toast={showToast}
+            onCreated={onCreated}
+            onDone={() => router.refresh()}
+          />
+
+          <div
             style={{
-              background: "#ffffff",
-              borderRadius: 16,
-              padding: 18,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-              display: "flex",
-              flexDirection: "column",
+              display: "grid",
+              gridTemplateColumns: "220px 120px 1fr 160px 90px",
               gap: 12,
-              minHeight: 0,
-              overflow: "hidden",
+              padding: "10px",
+              borderBottom: "1px solid #e5e7eb",
+              fontSize: 12,
+              fontWeight: 800,
             }}
           >
-            <h2 style={{ fontSize: 18, fontWeight: 900, flexShrink: 0 }}>
-              My Locations
-            </h2>
+            <div>Location</div>
+            <div>Temp</div>
+            <div>Weather</div>
+            <div style={{ textAlign: "right" }}>Observed at</div>
+            <div style={{ textAlign: "right" }}>Delete</div>
+          </div>
 
-            <div style={{ flexShrink: 0 }}>
-              <AddLocationBox
-                toast={showToast}
-                onCreated={onCreated}
-                onDone={() => router.refresh()}
-              />
-            </div>
+          <div style={{ display: "flex", flexDirection: "column", paddingRight: 4 }}>
+            {listItems.map((item) => {
+              const isSelected = selectedLocationId === item.location.id;
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "220px 120px 1fr 160px 90px",
-                gap: 12,
-                padding: "10px 10px",
-                borderBottom: "1px solid #e5e7eb",
-                color: "#6b7280",
-                fontSize: 12,
-                fontWeight: 800,
-                flexShrink: 0,
-              }}
-            >
-              <div>Location</div>
-              <div>Temp</div>
-              <div>Weather</div>
-              <div style={{ textAlign: "right" }}>Observed at</div>
-              <div style={{ textAlign: "right" }}>Delete</div>
-            </div>
+              return (
+                <div
+                  key={item.location.id}
+                  onClick={() => setSelectedLocationId(item.location.id)}
+                  style={{
+                    cursor: "pointer",
+                    borderRadius: 12,
+                    background: isSelected ? "#eff6ff" : "transparent",
+                    border: isSelected
+                      ? "1px solid #bfdbfe"
+                      : "1px solid transparent",
+                    flexShrink: 0,
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <WeatherRow
+                    item={item}
+                    onPromote={() => promoteToFeatured(item)}
+                    showDelete
+                    onDeleted={() => {
+                      const deletedId = item.location.id;
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                minHeight: 0,
-                overflowY: "auto",
-                paddingRight: 4,
-              }}
-            >
-              {listItems.map((item) => {
-                const isSelected = selectedLocationId === item.location.id;
+                      setOptimistic((prev) =>
+                        prev.filter((x) => x.location.id !== deletedId)
+                      );
 
-                return (
-                  <div
-                    key={item.location.id}
-                    onClick={() => setSelectedLocationId(item.location.id)}
-                    style={{
-                      cursor: "pointer",
-                      borderRadius: 12,
-                      background: isSelected ? "#eff6ff" : "transparent",
-                      border: isSelected
-                        ? "1px solid #bfdbfe"
-                        : "1px solid transparent",
-                      flexShrink: 0,
-                      transition: "all 0.15s ease",
+                      if (selectedLocationId === deletedId) {
+                        setSelectedLocationId(null);
+                      }
+
+                      router.refresh();
                     }}
-                  >
-                    <WeatherRow
-                      item={item}
-                      onPromote={() => promoteToFeatured(item)}
-                      showDelete={true}
-                      onDeleted={() => {
-                        const deletedId = item.location.id;
+                    toast={showToast}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-                        setOptimistic((prev) =>
-                          prev.filter((x) => x.location.id !== deletedId)
-                        );
-
-                        if (selectedLocationId === deletedId) {
-                          setSelectedLocationId(null);
-                        }
-
-                        router.refresh();
-                      }}
-                      toast={showToast}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Analytics */}
-          <section
-            style={{
-              background: "#ffffff",
-              borderRadius: 16,
-              padding: 18,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-              minHeight: 340,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-start",
-              overflow: "hidden",
-            }}
-          >
-            {selectedLocationId ? (
-              <AnalyticsPanel
-                locationId={selectedLocationId}
-                locationName={
-                  featured[0]?.location.id === selectedLocationId
-                    ? featured[0]?.location.name
-                    : featured[1]?.location.id === selectedLocationId
-                    ? featured[1]?.location.name
-                    : listItems.find((x) => x.location.id === selectedLocationId)?.location
-                        .name
-                }
-              />
-            ) : (
-              <div style={{ color: "#6b7280", fontSize: 14 }}>
-                선택된 도시가 없습니다.
-              </div>
-            )}
-          </section>
-
+        {/* Analytics */}
+        <section
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            padding: 18,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+          }}
+        >
+          {selectedLocationId ? (
+            <AnalyticsPanel
+              locationId={selectedLocationId}
+              locationName={
+                featured[0]?.location.id === selectedLocationId
+                  ? featured[0]?.location.name
+                  : featured[1]?.location.id === selectedLocationId
+                  ? featured[1]?.location.name
+                  : listItems.find((x) => x.location.id === selectedLocationId)
+                      ?.location.name
+              }
+            />
+          ) : (
+            <div style={{ color: "#6b7280" }}>선택된 도시가 없습니다.</div>
+          )}
         </section>
       </main>
 

@@ -1,6 +1,7 @@
 // frontend/src/features/home/ui/WeatherCard.tsx
 
 
+
 "use client";
 
 import type { HomeItemDTO } from "../api";

@@ -1,5 +1,6 @@
 // frontend/src/features/home/ui/WeatherRow.tsx
 
+
 "use client";
 
 import { deleteLocation } from "@/features/locations/api";

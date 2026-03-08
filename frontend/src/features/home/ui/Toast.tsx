@@ -1,6 +1,7 @@
 // frontend/src/features/home/ui/Toast.tsx
 
 
+
 "use client";
 
 type Props = {
