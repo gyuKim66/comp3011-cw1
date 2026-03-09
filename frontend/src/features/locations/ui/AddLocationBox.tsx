@@ -11,7 +11,6 @@ type Props = {
   onDone: () => void;
   toast: (msg: string) => void;
 
-  // ✅ created만이 아니라 latest까지 반영할 수 있게 payload 확장
   onCreated?: (item: { location: Location; latest: LatestObservationDTO | null }) => void;
 };
 
@@ -38,7 +37,7 @@ export default function AddLocationBox({ onDone, toast, onCreated }: Props) {
         const res = await searchLocations(q.trim(), 6);
         setItems(res);
       } catch (e) {
-        toast(`검색 실패: ${String(e)}`);
+        toast(`Search failed: ${String(e)}`);
         setItems([]);
       } finally {
         setLoading(false);
@@ -52,7 +51,7 @@ export default function AddLocationBox({ onDone, toast, onCreated }: Props) {
 
   const add = async () => {
     if (!selected) {
-      toast("먼저 검색 결과에서 도시를 선택해 주세요.");
+      toast("Please select a city from the search results first.");
       return;
     }
 
@@ -67,7 +66,7 @@ export default function AddLocationBox({ onDone, toast, onCreated }: Props) {
         is_featured: false,
       });
 
-      // ✅ 2) 즉시 리스트에 추가(일단 latest는 null)
+      // 2) 즉시 리스트에 추가(일단 latest는 null)
       onCreated?.({ location: created, latest: null });
 
       // 3) observation fetch (DB 저장)
@@ -77,7 +76,7 @@ export default function AddLocationBox({ onDone, toast, onCreated }: Props) {
       const latest = await getLatestObservation(created.id);
       onCreated?.({ location: created, latest });
 
-      toast("추가 완료!");
+      toast("Successfully added!");
       setQ("");
       setItems([]);
       setSelected(null);
@@ -87,10 +86,10 @@ export default function AddLocationBox({ onDone, toast, onCreated }: Props) {
     } catch (e) {
       const msg = String(e);
       if (msg.includes("409")) {
-        toast("이미 등록된 도시입니다.");
+        toast("The city is already registered.");
         return;
       }
-      toast(`추가 실패: ${msg}`);
+      toast(`Addition failed: ${msg}`);
     }
   };
 
@@ -109,7 +108,7 @@ export default function AddLocationBox({ onDone, toast, onCreated }: Props) {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="도시명 검색 (예: Busan, Tokyo)"
+          placeholder="Search for a city (e.g., London, New York)"
           style={{
             flex: 1,
             border: "1px solid #e5e7eb",
@@ -135,12 +134,12 @@ export default function AddLocationBox({ onDone, toast, onCreated }: Props) {
             whiteSpace: "nowrap",
           }}
         >
-          추가
+          Add
         </button>
       </div>
 
       <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700 }}>
-        {loading ? "검색 중..." : selected ? "선택됨" : "검색 후 항목을 선택하세요"}
+        {loading ? "Searching..." : selected ? "Selected" : "Please search and select an item."}
       </div>
 
       {items.length > 0 ? (

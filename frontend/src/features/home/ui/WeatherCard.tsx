@@ -24,13 +24,13 @@ function fmtTime(iso: string) {
 type Props = {
   item: HomeItemDTO;
   variant: "default" | "secondary";
-  onDelete?: () => void; // ✅ 추가
+  onDelete?: () => void; 
 };
 
 export default function WeatherCard({ item, variant, onDelete }: Props) {
-  // ✅ 기존 날씨 표시 로직이 있다면 아래 “표시 부분”은 그대로 유지하세요.
+  
   const locationName = (item as any)?.location?.name ?? "Unknown";
-  // ✅ 핵심 수정: observation이 아니라 latest를 읽는다
+  
   const temp = (item as any)?.latest?.temp;
   const weather = (item as any)?.latest?.weather_desc ?? (item as any)?.latest?.weather_main ?? "—";
   const observedAt = (item as any)?.latest?.observed_at ?? "";
@@ -45,7 +45,7 @@ export default function WeatherCard({ item, variant, onDelete }: Props) {
         border: "1px solid #e5e7eb",
       }}
     >
-      {/* ✅ 변경된 부분: 삭제 버튼 추가 */}
+      {/* 변경된 부분: 삭제 버튼 추가 */}
       <div
         style={{
           display: "flex",
@@ -82,11 +82,11 @@ export default function WeatherCard({ item, variant, onDelete }: Props) {
           aria-label="Remove this card"
           title="Remove"
         >
-          삭제
+          Delete
         </button>
       </div>
 
-      {/* ✅ 기존 날씨 정보 표시 영역 (유지) */}
+      {/* 기존 날씨 정보 표시 영역 (유지) */}
       <div style={{ display: "grid", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
           <div style={{ fontSize: 40, fontWeight: 950, lineHeight: 1 }}>

@@ -43,16 +43,16 @@ export default function WeatherRow({
   const onDelete = async () => {
     const id = item?.location?.id;
     if (id === undefined || id === null) {
-      toast?.("삭제할 location id가 없습니다.");
+      toast?.("No location ID specified for deletion.");
       return;
     }
 
     try {
-      await deleteLocation(Number(id)); // ✅ DELETE /locations/{id}
+      await deleteLocation(Number(id)); // DELETE /locations/{id}
       toast?.("삭제되었습니다. (비활성화)");
-      onDeleted?.(); // ✅ HomeClient에서 router.refresh()
+      onDeleted?.(); 
     } catch (e) {
-      toast?.(`삭제 실패: ${String(e)}`);
+      toast?.(`Deletion failed: ${String(e)}`);
     }
   };
 
@@ -68,7 +68,7 @@ export default function WeatherRow({
         fontSize: 14,
       }}
     >
-      {/* Location + 상단등록(작게, 위첨자 느낌) */}
+      {/* Location + Pint to Top(smaller, up) */}
       <div style={{ fontWeight: 800, color: "#111827", minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -93,9 +93,9 @@ export default function WeatherRow({
               whiteSpace: "nowrap",
             }}
             aria-label="Promote to top WeatherCard"
-            title="상단에 등록"
+            title="Pin to Top"
           >
-            상단등록
+            Pin to Top
           </button>
         </div>
       </div>
@@ -112,7 +112,7 @@ export default function WeatherRow({
         {observedAt ? fmtTimeStable(String(observedAt)) : ""}
       </div>
 
-      {/* ✅ Delete 버튼은 하단 목록에서만 표시 */}
+      {/* ✅ Delete Buttton */}
       {showDelete ? (
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button
@@ -133,7 +133,7 @@ export default function WeatherRow({
               whiteSpace: "nowrap",
             }}
             aria-label="Delete (soft delete) location"
-            title="목록에서 삭제(비활성화)"
+            title="Remove from list(Deactivate)"
           >
             Delete
           </button>

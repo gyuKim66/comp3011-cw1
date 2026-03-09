@@ -122,7 +122,7 @@ export default function HomeClient({ initialData }: Props) {
 
       router.refresh();
     } catch (e) {
-      showToast(`삭제(Featured 해제) 실패: ${String(e)}`);
+      showToast(`Failed to remove from Featured: ${String(e)}`);
     }
   };
 
@@ -134,7 +134,7 @@ export default function HomeClient({ initialData }: Props) {
     if (already) return;
 
     if (featured[0] && featured[1]) {
-      showToast("상단 WeatherCard는 최대 2개까지만 등록할 수 있습니다.");
+      showToast("You can register up to 2 WeatherCards at the top.");
       return;
     }
 
@@ -155,7 +155,7 @@ export default function HomeClient({ initialData }: Props) {
 
       router.refresh();
     } catch (e) {
-      showToast(`상단 등록 실패: ${String(e)}`);
+      showToast(`Failed to add to top: ${String(e)}`);
     }
   };
 
@@ -165,7 +165,7 @@ export default function HomeClient({ initialData }: Props) {
     const id = loc?.id;
 
     if (id === undefined || id === null) {
-      showToast("추가한 location 데이터가 올바르지 않습니다.");
+      showToast("The provided location data is invalid.");
       return;
     }
 
@@ -359,7 +359,7 @@ export default function HomeClient({ initialData }: Props) {
               }
             />
           ) : (
-            <div style={{ color: "#6b7280" }}>선택된 도시가 없습니다.</div>
+            <div style={{ color: "#6b7280" }}>No city has been selected.</div>
           )}
         </section>
       </main>
